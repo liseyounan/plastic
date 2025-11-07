@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MicroFilter Lab</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+      background: #f5faff;
+    }
+    h1 { color: #005fa3; }
+    input, select, button {
+      margin: 5px 0;
+      padding: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+    canvas { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>MicroFilter Lab</h1>
+  <p>미세필터 실험 데이터 기록 및 분석</p>
+
+  <div>
+    <label>날짜: <input type="date" id="date"></label><br>
+    <label>필터 재질:
+      <select id="filter">
+        <option>부직포</option>
+        <option>활성탄</option>
+        <option>모래층</option>
+        <option>셀룰로오스</option>
+      </select>
+    </label><br>
+    <label>제거 효율(%): <input type="number" id="eff" min="0" max="100"></label><br>
+    <button onclick="addData()">추가</button>
+    <button onclick="exportCSV()">CSV 저장</button>
+  </div>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>날짜</th><th>필터 재질</th><th>효율(%)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <canvas id="chart" width="400" height="200"></canvas>
+
+  <script>
+    const data = [];
+    const tbody = document.querySelector("#dataTable tbody");
+    const ctx = document.getElementById("chart").getContext("2d");
+    let chart;
+
+    function addData() {
+      const date = document.getElementById("date").value;
+      const filter = document.getElementById("filter").value;
+      const eff = document.getElementById("eff").value;
+      if (!date || eff === "") return alert("모든 값을 입력하세요!");
+
+      data.push({ date, filter, eff: Number(eff) });
+      renderTable();
+      renderChart();
+    }
+
+    function renderTable() {
+      tbody.innerHTML = data.map(d =>
+        `<tr><td>${d.date}</td><td>${d.filter}</td><td>${d.eff}</td></tr>`
+      ).join("");
+    }
+
+    function renderChart() {
+      const labels = data.map(d => d.date);
+      const values = data.map(d => d.eff);
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{ label: "제거 효율(%)", data: values, backgroundColor: "#0077b6" }]
+        },
+        options: { scales: { y: { beginAtZero: true, max: 100 } } }
+      });
+    }
+
+    function exportCSV() {
+      if (data.length === 0) return alert("데이터가 없습니다!");
+      let csv = "날짜,필터 재질,효율(%)\n" + data.map(d => `${d.date},${d.filter},${d.eff}`).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "microfilter.csv";
+      link.click();
+    }
+  </script>
+</body>
+</html>
